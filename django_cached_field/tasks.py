@@ -1,4 +1,4 @@
-from celery import task
+from celery import shared_task
 from celery.utils.log import get_task_logger
 from django.db.models import get_model
 import re
@@ -7,8 +7,7 @@ import re
 logger = get_task_logger(__name__)
 recalc_needed_re = re.compile("(.*)_recalculation_needed$")
 
-
-@task
+@shared_task
 def offload_cache_recalculation(app, model, obj_id, **kwargs):
     model = get_model(app,model)
     try:
