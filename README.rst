@@ -26,8 +26,11 @@ would entertain other minimums if someone was willing to test them.
 Configuration
 -------------
 
-Two settings changes are pretty much required for things to work: make
-sure it's a registered app, make sure celery sees its tasks file::
+Use of this library under at least version >= 1.6 of Django should not
+require any configuration changes; just import and use. For older
+Djangos, two settings changes are probably required for things to
+work: make sure it's a registered app, make sure celery sees its tasks
+file::
 
    INSTALLED_APPS += ['django_cached_field',]
    CELERY_IMPORTS += ['django_cached_field.tasks',]
@@ -77,7 +80,7 @@ our method appropriately::
 
 (Yeah, ``calculate_*`` is just a convention. I clearly haven't given
 up the rails ghost, but you can pass in your own method name with
-``calculation_method_name``.)
+the ``calculation_method_name`` arg to the field declaration.)
 
 Next, migrate your db schema to include the new cached field using
 south, or roll your own. Note that at least two fields will be added
@@ -165,3 +168,4 @@ TODO
 * Replace use of _recalculation_needed regex with class-level registry of cached fields.
 * Fix race condition with https://github.com/davehughes/django-transaction-signals ?
 * Or maybe with https://github.com/chrisdoble/django-celery-transactions ?
+* Make sure Django-1.7-style migrations still catch all the helper fields.
