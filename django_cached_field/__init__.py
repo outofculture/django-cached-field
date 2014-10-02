@@ -10,13 +10,14 @@ def _flag_FIELD_as_stale(self, field=None, and_recalculate=None, commit=True):
         and_recalculate = True
         if hasattr(settings, 'CACHED_FIELD_EAGER_RECALCULATION'):
             and_recalculate = settings.CACHED_FIELD_EAGER_RECALCULATION
-    #:MC: this could be improved by checking the database instead of the
-    #     object, but doing so would add a query per flag
-    if not getattr(self, field.recalculation_needed_field_name):
+    already_flagged_for_recalculation = type(self).objects.filter(pk=self.pk).values_list(
+        field.recalculation_needed_field_name, flat=True)[0]
+    if already_flagged_for_recalculation:
+        kwargs = {}  # This won't trigger an actual UPDATE.
+    else:
+        # Invalidate the cache
         setattr(self, field.recalculation_needed_field_name, True)
         kwargs = {field.recalculation_needed_field_name: True}
-    else:
-        kwargs = {}  # This won't trigger an actual UPDATE.
     if commit:
         type(self).objects.filter(pk=self.pk).update(**kwargs)
         if and_recalculate:
