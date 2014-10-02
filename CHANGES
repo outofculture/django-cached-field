@@ -1,3 +1,8 @@
+1.2.8
+------
+
+* Always check the database for recalculation flag. Fixes race conditions (thanks @keturn).
+
 1.2.7
 ------
 
