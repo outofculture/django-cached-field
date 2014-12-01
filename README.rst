@@ -35,14 +35,20 @@ file::
    INSTALLED_APPS += ['django_cached_field',]
    CELERY_IMPORTS += ['django_cached_field.tasks',]
 
-One change is optional: whether recalculation should happen when
-flagged as stale (default) or be left to the next time the attribute
-is accessed. This is useful for optimizing testing environments where
-you don't care that your cached values are invalid or that the expense
-of calculation is applied to a user. Note that, in this situation, you
-wouldn't need celery. ::
+If you're going to have expiration dates on your values, and you want
+to use timezone-aware datetimes, you will need to set this setting to
+True::
 
-   CACHED_FIELD_EAGER_RECALCULATION = True # or False for testing environments
+   CACHED_FIELD_USE_TIMEZONE = False  # default
+
+One setting for test environments: whether recalculation should happen
+when flagged as stale (default) or be left to the next time the
+attribute is accessed. This is useful for optimizing testing
+environments where you don't care that your cached values are invalid
+or that the expense of calculation is applied to a user. Note that, in
+this situation, you wouldn't need celery. ::
+
+   CACHED_FIELD_EAGER_RECALCULATION = True  # default
 
 This is a global option, so individual exceptions should instead be
 handled by passing the ``and_recalculate`` argument to the

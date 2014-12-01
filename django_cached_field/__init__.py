@@ -1,8 +1,14 @@
 from datetime import datetime, date
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from django.utils.functional import curry
 from django_cached_field.tasks import offload_cache_recalculation
+
+if getattr(settings, 'CACHED_FIELD_USE_TIMEZONE', False):
+    now = timezone.now
+else:
+    now = datetime.now
 
 
 def _flag_FIELD_as_stale(self, field=None, and_recalculate=None, commit=True):
@@ -27,20 +33,28 @@ def _flag_FIELD_as_stale(self, field=None, and_recalculate=None, commit=True):
 
 def _expire_FIELD_after(self, when=None, field=None):
     if when is not None and not isinstance(when, datetime):
-        when = datetime(when.year, when.month, when.day, 0, 0, 0)
+        when = datetime.now().replace(
+            year=when.year, month=when.month, day=when.day,
+            hour=0, minute=0, second=0, microsecond=0)
+        if getattr(settings, 'CACHED_FIELD_USE_TIMEZONE', False):
+            when = when.replace(tzinfo=timezone.utc)
     setattr(self, field.expiration_field_name, when)
     type(self).objects.filter(pk=self.pk).update(**{field.expiration_field_name: when})
 
 
 def _recalculate_FIELD(self, field=None, commit=True):
+    if commit:
+        type(self).objects.filter(pk=self.pk).update(
+            **{field.recalculation_needed_field_name: False})
     val = getattr(self, field.calculation_method_name)()
     self._set_FIELD(val, field=field)
     setattr(self, field.recalculation_needed_field_name, False)
-    kwargs = {field.cached_field_name: val,
-              field.recalculation_needed_field_name: False}
+    kwargs = {field.cached_field_name: val}
+    if not commit:
+        kwargs[field.recalculation_needed_field_name] = False
     if field.temporal_triggers:
         expires = getattr(self, field.expiration_field_name)
-        if expires and expires < datetime.now():
+        if expires and expires < now():
             setattr(self, field.expiration_field_name, None)
             kwargs[field.expiration_field_name] = None
     if commit:
@@ -54,7 +68,7 @@ def _get_FIELD(self, field=None):
     flag = getattr(self, field.recalculation_needed_field_name)
     if field.temporal_triggers:
         expiration = getattr(self, field.expiration_field_name)
-        flag = flag or (expiration is not None and expiration < datetime.now())
+        flag = flag or (expiration is not None and expiration < now())
     if flag is True:
         self._recalculate_FIELD(field=field)
         val = getattr(self, field.cached_field_name)
