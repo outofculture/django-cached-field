@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '1.2.9'
+version = '1.2.10'
 
 setup(name='django-cached-field',
       version=version,

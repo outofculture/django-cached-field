@@ -121,8 +121,12 @@ class CachedFieldMixin(object):
 
     def __init__(self, calculation_method_name=None, cached_field_name=None,
                  recalculation_needed_field_name=None, temporal_triggers=False,
+                 db_index_on_temporal_trigger_field=False,
+                 db_index_on_recalculation_needed_field=False,
                  expiration_field_name=None, *args, **kwargs):
         self.temporal_triggers = temporal_triggers
+        self.db_index_on_temporal_trigger_field = db_index_on_temporal_trigger_field
+        self.db_index_on_recalculation_needed_field = db_index_on_recalculation_needed_field
         if expiration_field_name:
             self._expiration_field_name = expiration_field_name
         if calculation_method_name:
@@ -137,21 +141,29 @@ class CachedFieldMixin(object):
     def contribute_to_class(self, cls, name):
         ensure_class_has_cached_field_methods(cls)
         self.name = name
-        setattr(cls, 'recalculate_{}'.format(self.name), curry(cls._recalculate_FIELD, field=self))
-        setattr(cls, self.name, property(curry(cls._get_FIELD, field=self), curry(cls._set_FIELD, field=self)))
+        setattr(cls,
+                'recalculate_{}'.format(self.name),
+                curry(cls._recalculate_FIELD, field=self))
+        setattr(cls,
+                self.name,
+                property(curry(cls._get_FIELD, field=self), curry(cls._set_FIELD, field=self)))
 
         proper_field = (set(type(self).__bases__) - set((CachedFieldMixin,))).pop()  # :MC: ew.
         proper_field = proper_field(*self.init_args_for_field, **self.init_kwargs_for_field)
         setattr(cls, self.cached_field_name, proper_field)
         proper_field.contribute_to_class(cls, self.cached_field_name)
 
-        flag_field = models.BooleanField(default=True)
+        flag_field = models.BooleanField(
+            default=True, db_index=self.db_index_on_recalculation_needed_field)
         setattr(cls, self.recalculation_needed_field_name, flag_field)
         flag_field.contribute_to_class(cls, self.recalculation_needed_field_name)
 
         if self.temporal_triggers:
-            setattr(cls, 'expire_{}_after'.format(self.name), curry(cls._expire_FIELD_after, field=self))
-            expire_field = models.DateTimeField(null=True)
+            setattr(cls,
+                    'expire_{}_after'.format(self.name),
+                    curry(cls._expire_FIELD_after, field=self))
+            expire_field = models.DateTimeField(
+                null=True, db_index=self.db_index_on_temporal_trigger_field)
             setattr(cls, self.expiration_field_name, expire_field)
             expire_field.contribute_to_class(cls, self.expiration_field_name)
 
