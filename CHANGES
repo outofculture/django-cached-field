@@ -1,3 +1,8 @@
+1.2.11
+------
+
+* Get the appropriate object_name from db proxy objects.
+
 1.2.10
 ------
 

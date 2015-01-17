@@ -80,8 +80,11 @@ def _set_FIELD(self, val, field=None):
 
 
 def trigger_cache_recalculation(self):
+    obj_name = self._meta.object_name
+    if self._meta.proxy:
+        obj_name = self._meta.proxy_for_model._meta.object_name
     offload_cache_recalculation.delay(
-        type(self)._meta.app_label, type(self)._meta.object_name, self.pk)
+        self._meta.app_label, obj_name, self.pk)
 
 
 def ensure_class_has_cached_field_methods(cls):
