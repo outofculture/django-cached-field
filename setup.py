@@ -3,7 +3,7 @@
 from setuptools import setup, find_packages
 import sys, os
 
-version = '1.2.11'
+version = '1.2.12'
 
 setup(name='django-cached-field',
       version=version,
@@ -13,7 +13,7 @@ setup(name='django-cached-field',
       keywords='django caching',
       author='Martin Chase',
       author_email='outofculture@gmail.com',
-      url='https://github.com/aquameta/django-cached-field',
+      url='https://github.com/outofculture/django-cached-field',
       license='BSD',
       packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
       include_package_data=True,
