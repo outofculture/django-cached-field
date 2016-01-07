@@ -1,18 +1,20 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
+import re
+
 try:
     # Django 1.9
     from django.apps import apps
+
     get_model = apps.get_model
 except ImportError:
     # Django 1.7 and before
     from django.db.models import get_model
-import re
-
 
 logger = get_task_logger(__name__)
 # TODO 20150119: this needs to handle custom named recalculation fields
 recalc_needed_re = re.compile("(.*)_recalculation_needed$")
+
 
 @shared_task
 def offload_cache_recalculation(app, model, obj_id, **kwargs):
@@ -26,6 +28,6 @@ def offload_cache_recalculation(app, model, obj_id, **kwargs):
                 getattr(obj, "recalculate_{0:s}".format(basename))()
     except model.DoesNotExist:
         logger.warning(
-            ('{0:s}.{1:s} with pk {2:s} does not exist.  Was offload_cache_recalculation '
-             + 'called before initial object creation or after object deletion?').format(
-                app, model, obj_id))
+            ('{0:s}.{1:s} with pk {2:s} does not exist.  Was offload_cache_recalculation ' +
+             'called before initial object creation or after object deletion?').format(
+                    app, model, obj_id))
