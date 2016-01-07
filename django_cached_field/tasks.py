@@ -1,6 +1,12 @@
 from celery import shared_task
 from celery.utils.log import get_task_logger
-from django.db.models import get_model
+try:
+    # Django 1.9
+    from django.apps import apps
+    get_model = apps.get_model
+except ImportError:
+    # Django 1.7 and before
+    from django.db.models import get_model
 import re
 
 
