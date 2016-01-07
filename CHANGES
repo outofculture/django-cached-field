@@ -1,3 +1,8 @@
+1.2.13
+------
+
+* Made compatible with Django 1.9 (get_model import change).
+
 1.2.11
 ------
 
