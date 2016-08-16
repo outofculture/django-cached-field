@@ -28,6 +28,6 @@ def offload_cache_recalculation(app, model, obj_id, **kwargs):
                 getattr(obj, "recalculate_{0:s}".format(basename))()
     except model.DoesNotExist:
         logger.warning(
-            ('{0:s}.{1:s} with pk {2:s} does not exist.  Was offload_cache_recalculation ' +
+            ('{}.{} with pk {} does not exist.  Was offload_cache_recalculation ' +
              'called before initial object creation or after object deletion?').format(
                     app, model, obj_id))

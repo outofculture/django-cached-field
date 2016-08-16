@@ -1,3 +1,8 @@
+1.2.14
+------
+
+* Fixed error reporting to be compatible with numeric obj_id.
+
 1.2.13
 ------
 
