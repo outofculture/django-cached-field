@@ -19,7 +19,7 @@ setup(name='django-cached-field',
       include_package_data=True,
       zip_safe=False,
       install_requires=[
-        'django>=1.3.1',
+        'django>=1.9',
         'celery>=3.0'
       ],
       entry_points="""
