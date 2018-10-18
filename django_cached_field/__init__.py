@@ -3,7 +3,11 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.utils.functional import curry
-from django_cached_field.constants import CACHED_FIELD_USE_TIMEZONE_SETTING, CACHED_FIELD_EAGER_RECALCULATION_SETTING
+from django_cached_field.constants import (
+    CACHED_FIELD_USE_TIMEZONE_SETTING,
+    CACHED_FIELD_EAGER_RECALCULATION_SETTING,
+    CACHED_FIELD_TRANSACTION_AWARE_SETTING
+)
 from django_cached_field.tasks import offload_cache_recalculation
 
 if getattr(settings, CACHED_FIELD_USE_TIMEZONE_SETTING, False):
@@ -84,8 +88,20 @@ def trigger_cache_recalculation(self):
     obj_name = self._meta.object_name
     if self._meta.proxy:
         obj_name = self._meta.proxy_for_model._meta.object_name
-    offload_cache_recalculation.delay(
-        self._meta.app_label, obj_name, self.pk)
+
+    recalc_signature = offload_cache_recalculation.s(
+        self._meta.app_label,
+        obj_name,
+        self.pk
+    )
+
+    if getattr(settings, CACHED_FIELD_TRANSACTION_AWARE_SETTING, False):
+        from django.db import transaction
+
+        transaction.on_commit(recalc_signature)
+        return
+
+    recalc_signature()
 
 
 def ensure_class_has_cached_field_methods(cls):
