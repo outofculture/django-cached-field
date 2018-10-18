@@ -3,9 +3,10 @@ from django.db import models
 from django.conf import settings
 from django.utils import timezone
 from django.utils.functional import curry
+from django_cached_field.constants import CACHED_FIELD_USE_TIMEZONE_SETTING, CACHED_FIELD_EAGER_RECALCULATION_SETTING
 from django_cached_field.tasks import offload_cache_recalculation
 
-if getattr(settings, 'CACHED_FIELD_USE_TIMEZONE', False):
+if getattr(settings, CACHED_FIELD_USE_TIMEZONE_SETTING, False):
     now = timezone.now
 else:
     now = datetime.now
@@ -14,8 +15,8 @@ else:
 def _flag_FIELD_as_stale(self, field=None, and_recalculate=None, commit=True):
     if and_recalculate is None:
         and_recalculate = True
-        if hasattr(settings, 'CACHED_FIELD_EAGER_RECALCULATION'):
-            and_recalculate = settings.CACHED_FIELD_EAGER_RECALCULATION
+        if hasattr(settings, CACHED_FIELD_EAGER_RECALCULATION_SETTING):
+            and_recalculate = settings.get(CACHED_FIELD_EAGER_RECALCULATION_SETTING)
     already_flagged_for_recalculation = type(self).objects.filter(pk=self.pk).values_list(
         field.recalculation_needed_field_name, flat=True)[0]
     if already_flagged_for_recalculation:
@@ -36,7 +37,7 @@ def _expire_FIELD_after(self, when=None, field=None):
         when = datetime.now().replace(
             year=when.year, month=when.month, day=when.day,
             hour=0, minute=0, second=0, microsecond=0)
-        if getattr(settings, 'CACHED_FIELD_USE_TIMEZONE', False):
+        if getattr(settings, CACHED_FIELD_USE_TIMEZONE_SETTING, False):
             when = when.replace(tzinfo=timezone.utc)
     setattr(self, field.expiration_field_name, when)
     type(self).objects.filter(pk=self.pk).update(**{field.expiration_field_name: when})
