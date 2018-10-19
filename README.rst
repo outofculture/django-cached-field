@@ -41,6 +41,15 @@ True::
 
    CACHED_FIELD_USE_TIMEZONE = False  # default
 
+Starting from 1.9, Django integrates functionality from
+`django-transaction-hooks<https://pypi.python.org/pypi/django-transaction-hooks>`
+it allows to perform actions after transaction commits are successful.
+If you would like to avoid race conditions due to transaction not being
+completed before celery recalculation task gets runned, you would like to
+set this setting to True::
+
+   CACHED_FIELD_TRANSACTION_AWARE = False # default
+
 One setting for test environments: whether recalculation should happen
 when flagged as stale (default) or be left to the next time the
 attribute is accessed. This is useful for optimizing testing
