@@ -89,20 +89,19 @@ def trigger_cache_recalculation(self):
     if self._meta.proxy:
         obj_name = self._meta.proxy_for_model._meta.object_name
 
-    recalc_signature = offload_cache_recalculation.s(
+    enqueue_recalculation = offload_cache_recalculation.s(
         self._meta.app_label,
         obj_name,
         self.pk
-    )
+    ).delay
 
     if getattr(settings, CACHED_FIELD_TRANSACTION_AWARE_SETTING, False):
         from django.db import transaction
 
-        transaction.on_commit(recalc_signature)
+        transaction.on_commit(enqueue_recalculation)
         return
 
-    recalc_signature()
-
+    enqueue_recalculation()
 
 def ensure_class_has_cached_field_methods(cls):
     # :TODO: can this be done with a mixin?
