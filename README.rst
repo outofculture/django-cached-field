@@ -167,7 +167,6 @@ get the idea.
 Caveats
 -------
 
-* Race condition if you flag a field as stale in a db transaction that takes longer to complete than the celery job takes to be called (so commit your transactions before invalidating the cache).
 * All ORM methods (e.g. ``order_by``, ``filter``) can only access this field through ``cached_FIELD``.
 * ``recalculate_FIELD`` uses ``.update(cached_FIELD=`` to set the value. Don't expect ``.save`` to be called.
 * ``flag_FIELD_as_stale`` uses ``.update``, as well.
@@ -181,6 +180,5 @@ TODO
 * All my tests are in the project I pulled this out of, but based on models therein. I don't have experience making tests for standalone django libraries. Someone wanna point me to a tutorial?
 * Recalculation task will not adapt to recalculation_needed_field_name option
 * Replace use of _recalculation_needed regex with class-level registry of cached fields.
-* Fix race condition with https://github.com/davehughes/django-transaction-signals ?
 * Or maybe with https://github.com/chrisdoble/django-celery-transactions ?
 * Make sure Django-1.7-style migrations still catch all the helper fields.
