@@ -1,8 +1,10 @@
-from datetime import datetime, date
-from django.db import models
+from datetime import datetime
+
 from django.conf import settings
+from django.db import models
 from django.utils import timezone
 from django.utils.functional import curry
+
 from django_cached_field.constants import (
     CACHED_FIELD_USE_TIMEZONE_SETTING,
     CACHED_FIELD_EAGER_RECALCULATION_SETTING,
@@ -103,6 +105,7 @@ def trigger_cache_recalculation(self):
 
     enqueue_recalculation()
 
+
 def ensure_class_has_cached_field_methods(cls):
     # :TODO: can this be done with a mixin?
     for func in (trigger_cache_recalculation, _set_FIELD, _get_FIELD,
@@ -167,7 +170,7 @@ class CachedFieldMixin(object):
                 self.name,
                 property(curry(cls._get_FIELD, field=self), curry(cls._set_FIELD, field=self)))
 
-        proper_field = (set(type(self).__bases__) - set((CachedFieldMixin,))).pop()  # :MC: ew.
+        proper_field = (set(type(self).__bases__) - {CachedFieldMixin}).pop()  # :MC: ew.
         proper_field = proper_field(*self.init_args_for_field, **self.init_kwargs_for_field)
         setattr(cls, self.cached_field_name, proper_field)
         proper_field.contribute_to_class(cls, self.cached_field_name)
