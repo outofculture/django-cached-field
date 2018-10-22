@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from django.conf import settings
-from django.db import models
+from django.db import models, transaction
 from django.utils import timezone
 from django.utils.functional import curry
 
@@ -97,13 +97,11 @@ def trigger_cache_recalculation(self):
         self.pk
     ).delay
 
-    if getattr(settings, CACHED_FIELD_TRANSACTION_AWARE_SETTING, False):
-        from django.db import transaction
-
+    if hasattr(transaction, 'on_commit'):
         transaction.on_commit(enqueue_recalculation)
-        return
-
-    enqueue_recalculation()
+    else:
+        # :MC: transaction-based race conditions happen here (before django 1.9)
+        enqueue_recalculation()
 
 
 def ensure_class_has_cached_field_methods(cls):
