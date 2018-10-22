@@ -6,67 +6,10 @@ Introduction
 
 Using Django ORM and Celery, cache expensive-to-calculate attributes.
 
-Installation
-------------
-
-You can make things easy on yourself::
-
-    pip install django-cached-field
-
-Or, for a manual installation, you can clone the repo and install it
-using python and setup.py::
-
-    git clone git://github.com/aquameta/django-cached-field.git
-    cd django-cached-field/
-    python setup.py install
-
-Tested with django 1.3.1, celery 2.3.1, and django-celery 2.3.3, but I
-would entertain other minimums if someone was willing to test them.
-
-Configuration
--------------
-
-Use of this library under at least version >= 1.6 of Django should not
-require any configuration changes; just import and use. For older
-Djangos, two settings changes are probably required for things to
-work: make sure it's a registered app, make sure celery sees its tasks
-file::
-
-   INSTALLED_APPS += ['django_cached_field',]
-   CELERY_IMPORTS += ['django_cached_field.tasks',]
-
-If you're going to have expiration dates on your values, and you want
-to use timezone-aware datetimes, you will need to set this setting to
-True::
-
-   CACHED_FIELD_USE_TIMEZONE = False  # default
-
-Starting from 1.9, Django integrates functionality from
-`django-transaction-hooks<https://pypi.python.org/pypi/django-transaction-hooks>`
-it allows to perform actions after transaction commits are successful.
-If you would like to avoid race conditions due to transaction not being
-completed before celery recalculation task gets runned, you would like to
-set this setting to True::
-
-   CACHED_FIELD_TRANSACTION_AWARE = False # default
-
-One setting for test environments: whether recalculation should happen
-when flagged as stale (default) or be left to the next time the
-attribute is accessed. This is useful for optimizing testing
-environments where you don't care that your cached values are invalid
-or that the expense of calculation is applied to a user. Note that, in
-this situation, you wouldn't need celery. ::
-
-   CACHED_FIELD_EAGER_RECALCULATION = True  # default
-
-This is a global option, so individual exceptions should instead be
-handled by passing the ``and_recalculate`` argument to the
-``flag_FIELD_as_stale`` call.
-
 Example
 -------
 
-Say you have a CTO who believes everything belongs in the database and
+Say you have a CTO who believes everything belongs in a relational database and
 a slow method on one of your models::
 
     class Lamppost(models.Model):
@@ -94,11 +37,11 @@ our method appropriately::
             return 'The %s %s of %s' % (self.weight, self.first_name, self.country)
 
 (Yeah, ``calculate_*`` is just a convention. I clearly haven't given
-up the rails ghost, but you can pass in your own method name with
+up the ruby ghost, but you can pass in your own method name with
 the ``calculation_method_name`` arg to the field declaration.)
 
-Next, migrate your db schema to include the new cached field using
-south, or roll your own. Note that at least two fields will be added
+Next, migrate your db schema to automatically include the new cache
+control fields. Note that at least two fields will be added
 to this table, ``cached_slow_full_name`` of type *text*,
 ``slow_full_name_recalculation_needed`` of type *boolean*, probably
 defaulting to true, and possibly ``slow_full_name_expires_after`` of
@@ -118,15 +61,10 @@ relevant values are updated)::
     @render_to('lamppost/edit.html')
     def edit(request, lamppost_id):
         lamppost = Lamppost.objects.get(pk=lamppost_id)
-        if request.METHOD == 'POST':
-            form = LamppostForm(request.POST)
-            if form.is_valid():
-                form.save()
-                form.instance.flag_slow_full_name_as_stale()
-                return HttpResponseRedirect(
-                    reverse('lamppost_view', args=(lamppost.pk,)))
-        else:
-            form = LamppostForm()
+        form = LamppostForm(request.POST, lamppost)
+        if form.is_valid():
+            form.save()
+            lamppost.flag_slow_full_name_as_stale()
         return {'form': form, 'lamppost': lamppost}
 
 **This is the hardest part as the developer.** Caching requires you
@@ -135,8 +73,8 @@ hunt down every place the value could be changed and calling that
 new value every morning at cron'o'clock? That flag had best be stale
 by cron'o'one. Do you calculate weight based on the sum of all
 associated pigeons? Hook into the pigeons landing. And takeoff. And
-everything that changes an individual pigeon's weight. As Abraham
-Lincoln said, "There are only two hard problems in programming:
+everything that changes an individual pigeon's weight. As Francis
+Bacon said, "There are only two hard problems in programming:
 naming, cache invalidation and off-by-one errors."
 
 One possible invalidation scheme you might want to use is expiration
@@ -144,7 +82,7 @@ dates. We know the pigeons on our lamppost are going to die and turn
 into ghosts, right::
 
     class Pigeon(models.Model):
-        death_day = models.DateField()
+        death_date = models.DateField()
 
         def die(self):
             self.weight = 0
@@ -161,8 +99,57 @@ note of their death as they land::
             self.expire_slow_full_name_after(earliest)
 
 Or maybe you only want the cache to ever be valid for 30 minutes, lest
-**They** have too easy a time of tracking your thoughts. So, yeah, you
-get the idea.
+**They** have too easy a job tracking your thoughts.
+
+So, yeah, you get the idea.
+
+Installation
+------------
+
+You can make things easy on yourself::
+
+    pip install django-cached-field
+
+Or, for a more artisanal feeling, you can clone the repo and install it
+using python and setup.py::
+
+    git clone git@github.com:outofculture/django-cached-field.git
+    cd django-cached-field/
+    python setup.py install
+
+Tested with django 1.3.1, celery 2.3.1, and django-celery 2.3.3, but I
+would entertain other minimums if someone was willing to test them.
+
+Configuration
+-------------
+
+Use of this library under at least version >= 1.6 of Django should not
+require any configuration changes; just import and use. For older
+Djangos, two settings changes are probably required for things to
+work: make sure it's a registered app, make sure celery sees its tasks
+file::
+
+   INSTALLED_APPS += ['django_cached_field',]
+   CELERY_IMPORTS += ['django_cached_field.tasks',]
+
+If you're going to have expiration dates on your values, and you want
+to use timezone-aware datetimes, you will need to set this setting to
+True::
+
+   CACHED_FIELD_USE_TIMEZONE = False  # default
+
+One setting for test environments: whether recalculation should happen
+when flagged as stale (default) or be left to the next time the
+attribute is accessed. This is useful for optimizing testing
+environments where you don't care that your cached values are invalid
+or that the expense of calculation is applied to a user. Note that, in
+this situation, you wouldn't need celery. ::
+
+   CACHED_FIELD_EAGER_RECALCULATION = True  # default
+
+This is a global option, so individual exceptions should instead be
+handled by passing the ``and_recalculate`` argument to the
+``flag_FIELD_as_stale`` call.
 
 Caveats
 -------
@@ -180,5 +167,3 @@ TODO
 * All my tests are in the project I pulled this out of, but based on models therein. I don't have experience making tests for standalone django libraries. Someone wanna point me to a tutorial?
 * Recalculation task will not adapt to recalculation_needed_field_name option
 * Replace use of _recalculation_needed regex with class-level registry of cached fields.
-* Or maybe with https://github.com/chrisdoble/django-celery-transactions ?
-* Make sure Django-1.7-style migrations still catch all the helper fields.
