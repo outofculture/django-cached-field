@@ -1,14 +1,19 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
-import sys, os
 
-version = '1.2.15'
+
+def readme():
+    with open('README.rst') as f:
+        return f.read()
+
+
+version = '1.3.0'
 
 setup(name='django-cached-field',
       version=version,
-      description="Celery-deferred, cached fields on Django ORM for expensive-to-calculate data",
-      long_description="""Celery-deferred, cached fields on Django ORM for expensive-to-calculate data""",
+      description="Celery-deferred, cached fields on Django ORM for expensive-to-calculate attributes",
+      long_description=readme(),
       classifiers=[],  # Get strings from http://pypi.python.org/pypi?%3Aaction=list_classifiers
       keywords='django caching',
       author='Martin Chase',
