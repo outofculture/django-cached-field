@@ -159,6 +159,7 @@ Caveats
 * ``flag_FIELD_as_stale`` uses ``.update``, as well.
 * This may break if you try to add this mixin to a field class that multiply-inherits (I'm currently grabbing an arbitrary, non-CachedFieldMixin class and making the real field with it).
 * The FIELD_recalculation_needed field is accessed by regex in at least one place, so problems will result from user fields that match the same pattern.
+* Exceptions in a post-hook will potentially break saves of the data.
 
 TODO
 ----

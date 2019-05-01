@@ -8,7 +8,6 @@ from django.utils.functional import curry
 from django_cached_field.constants import (
     CACHED_FIELD_USE_TIMEZONE_SETTING,
     CACHED_FIELD_EAGER_RECALCULATION_SETTING,
-    CACHED_FIELD_TRANSACTION_AWARE_SETTING
 )
 from django_cached_field.tasks import offload_cache_recalculation
 
@@ -20,9 +19,7 @@ else:
 
 def _flag_FIELD_as_stale(self, field=None, and_recalculate=None, commit=True):
     if and_recalculate is None:
-        and_recalculate = True
-        if hasattr(settings, CACHED_FIELD_EAGER_RECALCULATION_SETTING):
-            and_recalculate = settings.get(CACHED_FIELD_EAGER_RECALCULATION_SETTING)
+        and_recalculate = getattr(settings, CACHED_FIELD_EAGER_RECALCULATION_SETTING, True)
     already_flagged_for_recalculation = type(self).objects.filter(pk=self.pk).values_list(
         field.recalculation_needed_field_name, flat=True)[0]
     if already_flagged_for_recalculation:
@@ -66,6 +63,10 @@ def _recalculate_FIELD(self, field=None, commit=True):
             kwargs[field.expiration_field_name] = None
     if commit:
         type(self).objects.filter(pk=self.pk).update(**kwargs)
+        if field.post_calculation_hook_method_name and hasattr(self, field.post_calculation_hook_method_name):
+            post_hook = getattr(self, field.post_calculation_hook_method_name, None)
+            if callable(post_hook):
+                post_hook()
     else:
         return kwargs
 
@@ -137,10 +138,13 @@ class CachedFieldMixin(object):
       `recalculation_needed_field_name' to specify a field name other than
         FIELD_recalculation_needed
       `temporal_triggers' to turn on expirations
+      `post_calculation_hook_method_name` to specify a post recalculate hook
+        (error handling for the hook callable is responsability of the user)
     """
 
     def __init__(self, calculation_method_name=None, cached_field_name=None,
                  recalculation_needed_field_name=None, temporal_triggers=False,
+                 post_calculation_hook_method_name=None,
                  db_index_on_temporal_trigger_field=False,
                  db_index_on_recalculation_needed_field=False,
                  expiration_field_name=None, *args, **kwargs):
@@ -155,6 +159,7 @@ class CachedFieldMixin(object):
             self._cached_field_name = cached_field_name
         if recalculation_needed_field_name:
             self._recalculation_needed_field_name = recalculation_needed_field_name
+        self.post_calculation_hook_method_name = post_calculation_hook_method_name
         self.init_args_for_field = args
         self.init_kwargs_for_field = kwargs
 
