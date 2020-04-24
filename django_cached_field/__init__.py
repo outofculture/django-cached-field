@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
+import sys
 from datetime import datetime
-from functools import partial
 
 from django.conf import settings
 from django.db import models, transaction
@@ -12,6 +12,13 @@ from .constants import (
     CACHED_FIELD_EAGER_RECALCULATION_SETTING,
 )
 from .tasks import offload_cache_recalculation
+
+if sys.version_info > (3, 4):
+    from functools import partialmethod as curry, partial as curry_for_property
+else:
+    from django.utils import curry
+
+    curry_for_property = curry
 
 if getattr(settings, CACHED_FIELD_USE_TIMEZONE_SETTING, False):
     now = timezone.now
@@ -170,10 +177,10 @@ class CachedFieldMixin(object):
         self.name = name
         setattr(cls,
                 'recalculate_{}'.format(self.name),
-                partial(cls._recalculate_FIELD, field=self))
+                curry(cls._recalculate_FIELD, field=self))
         setattr(cls,
                 self.name,
-                property(partial(cls._get_FIELD, field=self), partial(cls._set_FIELD, field=self)))
+                property(curry_for_property(cls._get_FIELD, field=self), curry_for_property(cls._set_FIELD, field=self)))
 
         proper_field = (set(type(self).__bases__) - {CachedFieldMixin}).pop()  # :MC: ew.
         proper_field = proper_field(*self.init_args_for_field, **self.init_kwargs_for_field)
@@ -188,13 +195,13 @@ class CachedFieldMixin(object):
         if self.temporal_triggers:
             setattr(cls,
                     'expire_{}_after'.format(self.name),
-                    partial(cls._expire_FIELD_after, field=self))
+                    curry(cls._expire_FIELD_after, field=self))
             expire_field = models.DateTimeField(
                 null=True, db_index=self.db_index_on_temporal_trigger_field)
             setattr(cls, self.expiration_field_name, expire_field)
             expire_field.contribute_to_class(cls, self.expiration_field_name)
 
-        setattr(cls, 'flag_{}_as_stale'.format(self.name), partial(cls._flag_FIELD_as_stale, field=self))
+        setattr(cls, 'flag_{}_as_stale'.format(self.name), curry(cls._flag_FIELD_as_stale, field=self))
 
     @property
     def cached_field_name(self):
