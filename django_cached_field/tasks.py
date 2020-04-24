@@ -1,7 +1,9 @@
 from __future__ import absolute_import
+
+import re
+
 from celery import shared_task
 from celery.utils.log import get_task_logger
-import re
 
 try:
     # Django 1.9
