@@ -137,8 +137,9 @@ using python and setup.py:
    python setup.py install
 
 
-Tested with django 1.3.1, celery 2.3.1, and django-celery 2.3.3, but I
-would entertain other minimums if someone was willing to test them.
+Tested with minimum versions python 2.7, django 1.3.1, celery 2.3.1,
+and django-celery 2.3.3. Should be compatible with as recent as python
+3.8, django 3.0.5, celery 3.1.26.post2 and django-celery 3.3.1.
 
 Configuration
 -------------
