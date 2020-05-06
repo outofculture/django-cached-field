@@ -144,18 +144,6 @@ and django-celery 2.3.3. Should be compatible with as recent as python
 Configuration
 -------------
 
-Use of this library under at least version >= 1.6 of Django should not
-require any configuration changes; just import and use. For older
-Djangos, two settings changes are probably required for things to
-work: make sure it's a registered app, make sure celery sees its tasks
-file:
-
-.. code:: python
-
-   INSTALLED_APPS += ['django_cached_field',]
-   CELERY_IMPORTS += ['django_cached_field.tasks',]
-
-
 If you're going to have expiration dates on your values, and you want
 to use timezone-aware datetimes, you will need to set this setting to
 True:
@@ -180,6 +168,21 @@ this situation, you wouldn't need celery. :
 This is a global option, so individual exceptions should instead be
 handled by passing the ``and_recalculate`` argument to the
 ``flag_FIELD_as_stale`` call.
+
+Configuration for Django < 1.6
+------------------------------
+
+Use of this library under at least version >= 1.6 of Django should not
+require any configuration changes; just import and use. For older
+Djangos, two settings changes are probably required for things to
+work: make sure it's a registered app, make sure celery sees its tasks
+file:
+
+.. code:: python
+
+   INSTALLED_APPS += ['django_cached_field',]
+   CELERY_IMPORTS += ['django_cached_field.tasks',]
+
 
 Caveats
 -------
