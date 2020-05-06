@@ -16,7 +16,7 @@ from .tasks import offload_cache_recalculation
 if sys.version_info > (3, 4):
     from functools import partialmethod as curry, partial as curry_for_property
 else:
-    from django.utils import curry
+    from django.utils.functional import curry
 
     curry_for_property = curry
 
